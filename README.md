@@ -1,7 +1,7 @@
 <br>
 
 <p align="center">
-<img src="https://actix.rs/img/logo-large.png" alt="Rust">
+<img src="http://actix.rs/img/logo-large.png" alt="Rust">
 </p>
 
 
