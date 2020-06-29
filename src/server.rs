@@ -14,11 +14,11 @@ use dotenv::dotenv;
 use crate::bll::*;
 use futures::executor;
 use std::{sync::mpsc, thread};
-use mysql::*;
-use mysql::prelude::*;
+//use mysql::*;
+//use mysql::prelude::*;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "RustNeteaseCloudMusicApi", about = "A Netease Cloud Music Rust API Service")]
+#[structopt(name = "rust-actix-web-service", about = "rust-actix-web-service")]
 pub(crate) struct Opt {
     #[structopt(long, default_value = "0.0.0.0")]
     ip: String,
@@ -67,6 +67,7 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .data(pool.clone())
             //.service(web::resource("/get").route(web::get().to(list)))
             .service(list)
+            .service(test)
             .service(hello)
             .service(stop)
             .service(

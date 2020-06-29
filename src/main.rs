@@ -1,6 +1,6 @@
 
 #[macro_use]
-//mod macros;
+mod macros;
 //mod crypto;
 //mod music_api;
 //mod request;
