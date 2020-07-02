@@ -1,5 +1,5 @@
-
 #[macro_use]
+extern crate redis_async;
 mod macros;
 //mod crypto;
 //mod music_api;
