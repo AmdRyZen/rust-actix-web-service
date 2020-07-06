@@ -73,7 +73,7 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .data(pool.clone())
             .data(client.clone())
-            //.service(web::resource("/get").route(web::get().to(list)))
+            .service(web::resource("/success/{name}").route(web::get().to(success)))
             .service(list)
             .service(test)
             .service(hello)

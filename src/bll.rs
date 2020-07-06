@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest, web, Error as AWError, HttpResponse, Result, get};
+use actix_web::{HttpRequest, web, Error as AWError, HttpResponse, Responder, Result, get};
 use serde::{Deserialize, Serialize};
 // serde_json::Result;
 use mysql::*;
@@ -9,6 +9,19 @@ use urlqstring::QueryParams;
 use actix_redis::{Command, RedisActor};
 use redis_async::resp::RespValue;
 use futures::future::join_all;
+
+#[derive(Serialize)]
+struct Success {
+    code: i32,
+    message: String,
+    list: List,
+}
+
+#[derive(Serialize)]
+struct Failed {
+    code: u32,
+    message: String,
+}
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 struct List {
@@ -44,6 +57,22 @@ pub(crate) async fn list(
         Ok(result) => HttpResponse::Ok().content_type("application/json").body(serde_json::to_string(&result).unwrap()),
         Err(_e) => HttpResponse::InternalServerError().body("err"),
     }
+}
+
+pub(crate) async fn success(redis: web::Data<Addr<RedisActor>>, req: HttpRequest) -> impl Responder {
+    let name = req.match_info().get("name").unwrap_or("name");
+    let result = redis.send(Command(resp_array!["get",name])).await;
+
+   /* match result{
+        Ok(result) =>{
+            web::Json(Success { code: 1, message: "success".to_string(), list: List{ id: 99, status: 1, name: &result }  })
+        }
+        Err(_e) => {
+            web::Json(Failed { code: -1, message: "error" })
+        }
+    }*/
+
+    web::Json(Success { code: 1, message: "success".to_string(), list: List{ id: 99, status: 1, name: name.to_string() }  })
 }
 
 pub(crate) async fn set(

@@ -23,6 +23,7 @@ mysql = "18.2.0"
 actix-redis = "0.8.0"
 redis-async = "0.6.1"
 serde = { version = "1.0.71", features = ["derive"] }
+openssl = { version = "0.10", features = ["vendored"] }
 
 
 [dependencies.actix-files]
@@ -36,9 +37,6 @@ version = "0.4"
 
 [dependencies.lazy_static]
 version = "1.4"
-
-[dependencies.openssl]
-version = "0.10"
 
 [dependencies.percent-encoding]
 version = "2.1.0"

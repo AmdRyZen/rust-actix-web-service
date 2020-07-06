@@ -24,6 +24,9 @@ cargo run
 cargo update
 cargo build --release
 sudo nohup ./target/release/rust-actix-web-service &
+
+
+Linux 交叉  CROSS_COMPILE=x86_64-linux-musl- cargo build --release --target x86_64-unknown-linux-musl
 ```
 服务器启动默认端口为 8000
 
