@@ -12,7 +12,7 @@ actix-rt = "1.0.0"
 actix-web = "2.0.0"
 env_logger = "0.7"
 futures = "0.3.1"
-tokio = "0.2.13"
+#tokio = "0.2.13"
 #mysql_async = "0.23.1"
 dotenv = "0.15.0"
 listenfd = "0.3"
@@ -20,10 +20,13 @@ urlqstring = "0.3.5"
 json = "0.12"
 bytes = "0.5.2"
 mysql = "18.2.0"
-actix-redis = "0.8.0"
-redis-async = "0.6.1"
+actix-redis = "0.8.2"
+redis-async = "0.6.2"
 serde = { version = "1.0.71", features = ["derive"] }
 openssl = { version = "0.10", features = ["vendored"] }
+mobc-redis = "0.5.3"
+mobc = "0.5.7"
+tokio = {version = "0.2.13", features = ["full"]}
 
 
 [dependencies.actix-files]

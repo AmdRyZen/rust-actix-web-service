@@ -14,10 +14,11 @@ use dotenv::dotenv;
 use crate::bll::*;
 use futures::executor;
 use std::{sync::mpsc, thread};
-//use actix::prelude::*;
-use actix_redis::{RedisActor};
-//use mysql::*;
-//use mysql::prelude::*;
+
+use mobc::Pool;
+use mobc_redis::RedisConnectionManager;
+use mobc_redis::{redis};
+
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "rust-actix-web-service", about = "rust-actix-web-service")]
@@ -63,7 +64,9 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
 
       // redis
       let redis_url = env::var("REDIS_URL").expect("REDIS_URL is not set in .env file");
-      let client = RedisActor::start(redis_url);
+      let client = redis::Client::open(redis_url).unwrap();
+      let manager = RedisConnectionManager::new(client);
+      let redis_pool = Pool::builder().max_open(100).build(manager);
 
       // start server as normal but don't .await after .run() yet
       let mut listenfd = ListenFd::from_env();
@@ -72,14 +75,14 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .data(tx.clone())
             .wrap(middleware::Logger::default())
             .data(pool.clone())
-            .data(client.clone())
+            .data(redis_pool.clone())
             .service(web::resource("/success/{name}").route(web::get().to(success)))
             .service(list)
             .service(test)
             .service(hello)
             .service(stop)
-            .service(web::resource("/set").route(web::post().to(set)))
-            .service(web::resource("/get").route(web::get().to(get)))
+            .service(web::resource("/set/{name}").route(web::post().to(set)))
+            //.service(web::resource("/get").route(web::get().to(get)))
             .service(
                 actix_files::Files::new("/", "./public/").index_file("index.html")
             )

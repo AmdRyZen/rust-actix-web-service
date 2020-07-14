@@ -1,14 +1,12 @@
-use actix_web::{HttpRequest, web, Error as AWError, HttpResponse, Responder, Result, get};
+use actix_web::{HttpRequest, web, HttpResponse, Responder, get};
 use serde::{Deserialize, Serialize};
 // serde_json::Result;
 use mysql::*;
 use mysql::prelude::*;
-//use serde_json::json;
-use actix::prelude::*;
 use urlqstring::QueryParams;
-use actix_redis::{Command, RedisActor};
-use redis_async::resp::RespValue;
-use futures::future::join_all;
+use std::str;
+use mobc_redis::RedisConnectionManager;
+use mobc_redis::{redis, Connection};
 
 #[derive(Serialize)]
 struct Success {
@@ -28,11 +26,6 @@ struct List {
     id: i32,
     status: i32,
     name: String,
-}
-
-#[derive(Deserialize)]
-pub struct CacheInfo {
-    key: String,
 }
 
 #[get("/list")]
@@ -59,65 +52,32 @@ pub(crate) async fn list(
     }
 }
 
-pub(crate) async fn success(redis: web::Data<Addr<RedisActor>>, req: HttpRequest) -> impl Responder {
+
+/*let count : i32 = con.get("my_counter")?;
+let count = con.get("my_counter").unwrap_or(0i32);
+let k : Option<String> = con.get("missing_key")?;
+let name : String = con.get("my_name")?;
+let bin : Vec<u8> = con.get("my_binary")?;
+let map : HashMap<String, i32> = con.hgetall("my_hash")?;
+let keys : Vec<String> = con.hkeys("my_hash")?;
+let mems : HashSet<i32> = con.smembers("my_set")?;
+let (k1, k2) : (String, String) = con.get(&["k1", "k2"])?;*/
+pub(crate) async fn success(redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>, req: HttpRequest) -> impl Responder {
     let name = req.match_info().get("name").unwrap_or("name");
-    let result = redis.send(Command(resp_array!["get",name])).await;
+    let mut conn = redis_pool.get().await.unwrap();
+    // let s: String = redis::cmd("SET").arg("a").arg(1).query_async(&mut conn as &mut Connection).await.unwrap();
+    let s: String = redis::cmd("GET").arg(name).query_async(&mut conn as &mut Connection).await.unwrap_or("".to_string());
 
-   /* match result{
-        Ok(result) =>{
-            web::Json(Success { code: 1, message: "success".to_string(), list: List{ id: 99, status: 1, name: &result }  })
-        }
-        Err(_e) => {
-            web::Json(Failed { code: -1, message: "error" })
-        }
-    }*/
-
-    web::Json(Success { code: 1, message: "success".to_string(), list: List{ id: 99, status: 1, name: name.to_string() }  })
-}
-
-pub(crate) async fn set(
-    info: web::Json<CacheInfo>,
-    redis: web::Data<Addr<RedisActor>>,
-) -> Result<HttpResponse, AWError> {
-    let info = info.into_inner();
-    let result=redis.send(Command(resp_array!["set","name",info.key]));
-    let res: Vec<Result<RespValue, AWError>> =
-        join_all(vec![result].into_iter())
-            .await
-            .into_iter()
-            .map(|item| {
-                item.map_err(AWError::from)
-                    .and_then(|res| res.map_err(AWError::from))
-            })
-            .collect();
-
-    // successful operations return "OK", so confirm that all returned as so
-    if !res.iter().all(|res| match res {
-        Ok(RespValue::SimpleString(x)) if x == "OK" => true,
-        _ => false,
-    }) {
-        Ok(HttpResponse::InternalServerError().finish())
-    } else {
-        Ok(HttpResponse::Ok().body("successfully cached values"))
-    }
+    web::Json(Success { code: 1, message: "success".to_string(), list: List{ id: 99, status: 1, name: s }  })
 }
 
 
+pub(crate) async fn set(redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>, req: HttpRequest) -> impl Responder {
+    let name = req.match_info().get("name").unwrap_or("name");
+    let mut conn = redis_pool.get().await.unwrap();
+    let s: String = redis::cmd("SET").arg(name).arg(name).query_async(&mut conn as &mut Connection).await.unwrap();
 
-pub(crate) async fn get(
-    redis: web::Data<Addr<RedisActor>>,
-) -> Result<HttpResponse, AWError> {
-    let result=redis.send(Command(resp_array!["get","name"])).await?;
-    match result{
-        Ok(RespValue::BulkString(s)) =>{
-            Ok(HttpResponse::Ok().body(s))
-        }
-        _ => {
-            println!("---->{:?}", result);
-            Ok(HttpResponse::InternalServerError().finish())
-        }
-    }
-
+    web::Json(Success { code: 1, message: "success".to_string(), list: List{ id: 99, status: 1, name: s }  })
 }
 
 #[get("/test")]
