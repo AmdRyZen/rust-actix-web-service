@@ -9,15 +9,15 @@ use std::str;
 use urlqstring::QueryParams;
 
 #[derive(Serialize)]
-struct Success {
+struct Success<T> {
     code: i32,
     message: String,
-    list: List,
+    list: T,
 }
 
 #[derive(Serialize)]
 struct Failed {
-    code: u32,
+    code: i32,
     message: String,
 }
 
@@ -29,23 +29,30 @@ struct List {
 }
 
 #[get("/list")]
-pub(crate) async fn list(pool: web::Data<mysql::Pool>, req: HttpRequest) -> HttpResponse {
+pub(crate) async fn list(pool: web::Data<mysql::Pool>, req: HttpRequest) -> impl Responder {
     let query = QueryParams::from(req.query_string());
-    let id = query.value("id");
-    println!("{:?}", id);
+    let _id = query.value("id");
+    //println!("{:?}", id);
+
+    let sql = "select id, status, name from t_media_screenshot";
+    let sql = sql.to_string() + " order by id desc";
 
     let mut conn = pool.get_conn().unwrap();
     let result = conn.query_map(
-        "SELECT id, status, name from t_media_screenshot where id= 2",
+        sql,
         |(id, status, name)| List { id, status, name },
     );
-    match result {
-        // HttpResponse::Ok().content_type("application/json").json(serde_json::to_string(&result).unwrap()),
-        Ok(result) => HttpResponse::Ok()
-            .content_type("application/json")
-            .body(serde_json::to_string(&result).unwrap()),
-        Err(_e) => HttpResponse::InternalServerError().body("err"),
-    }
+
+    let list = match result {
+        Ok(result) => result,
+        Err(_e) => vec![],
+    };
+
+    web::Json(Success {
+        code: 1,
+        message: "success".to_string(),
+        list: list,
+    })
 }
 
 /*let count : i32 = con.get("my_counter")?;
