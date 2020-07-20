@@ -5,11 +5,8 @@
 //mod request;
 mod bll;
 mod server;
+use crate::server::{start_server, Opt};
 use structopt::StructOpt;
-use crate::server::{
-    Opt,
-    start_server
-};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
