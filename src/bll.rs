@@ -6,13 +6,13 @@ use mobc_redis::{redis, Connection};
 use mysql::prelude::*;
 use mysql::*;
 use std::str;
-use urlqstring::QueryParams;
+use serde_json::Value;
 
 #[derive(Serialize)]
 struct Success<T> {
     code: i32,
     message: String,
-    list: T,
+    result: T,
 }
 
 #[derive(Serialize)]
@@ -26,21 +26,26 @@ struct List {
     id: i32,
     status: i32,
     name: String,
+    pull_url: String,
+    server_name: String,
+    created_at: String,
 }
 
-#[get("/list")]
-pub(crate) async fn list(pool: web::Data<mysql::Pool>, req: HttpRequest) -> impl Responder {
-    let query = QueryParams::from(req.query_string());
-    let _id = query.value("id");
-    //println!("{:?}", id);
+pub(crate) async fn list(pool: web::Data<mysql::Pool>, _req: HttpRequest, _info: web::Json<Value>) -> impl Responder {
+    let id = _info.get("id").unwrap();
 
-    let sql = "select id, status, name from t_media_screenshot";
-    let sql = sql.to_string() + " order by id desc";
+    let mut sql = String::from("");
+    sql.push_str("select id, status, name, pull_url, server_name, created_at  from t_media_screenshot ");
+    if id.is_string() {
+        sql.push_str(" where id = ");
+        sql.push_str(&id.to_string());
+    }
+    sql.push_str(" order by id desc");
 
     let mut conn = pool.get_conn().unwrap();
     let result = conn.query_map(
         sql,
-        |(id, status, name)| List { id, status, name },
+        |(id, status, name, pull_url, server_name, created_at)| List { id, status, name, pull_url, server_name, created_at },
     );
 
     let list = match result {
@@ -51,7 +56,7 @@ pub(crate) async fn list(pool: web::Data<mysql::Pool>, req: HttpRequest) -> impl
     web::Json(Success {
         code: 1,
         message: "success".to_string(),
-        list: list,
+        result: list,
     })
 }
 
@@ -80,11 +85,7 @@ pub(crate) async fn get(
     web::Json(Success {
         code: 1,
         message: "success".to_string(),
-        list: List {
-            id: 99,
-            status: 1,
-            name: s,
-        },
+        result: s,
     })
 }
 
@@ -104,11 +105,7 @@ pub(crate) async fn set(
     web::Json(Success {
         code: 1,
         message: "success".to_string(),
-        list: List {
-            id: 99,
-            status: 1,
-            name: s,
-        },
+        result: s,
     })
 }
 

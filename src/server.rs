@@ -68,13 +68,12 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .data(pool.clone())
             .data(redis_pool.clone())
-            .service(list)
             .service(test)
             .service(hello)
             .service(stop)
             .service(web::resource("/get/{name}").route(web::get().to(get)))
             .service(web::resource("/set/{name}").route(web::get().to(set)))
-            //.service(actix_files::Files::new("/", "./public/").index_file("index.html"))
+            .service(web::resource("/list").route(web::post().to(list)))
     });
 
     let env = env::var("ENV").expect("ENV is not set in .env file");
