@@ -4,10 +4,9 @@ use listenfd::ListenFd;
 use std::env;
 use structopt::StructOpt;
 //use crate::music_api::*;
-use crate::bll::*;
+use crate::http::*;
 use futures::executor;
 use std::{sync::mpsc, thread};
-
 use mobc::Pool;
 use mobc_redis::redis;
 use mobc_redis::RedisConnectionManager;
@@ -73,7 +72,7 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .service(stop)
             .service(web::resource("/get/{name}").route(web::get().to(get)))
             .service(web::resource("/set/{name}").route(web::get().to(set)))
-            .service(web::resource("/list").route(web::post().to(list)))
+            .service(web::resource("/list").route(web::get().to(list)))
     });
 
     let env = env::var("ENV").expect("ENV is not set in .env file");

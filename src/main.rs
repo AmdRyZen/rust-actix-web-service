@@ -3,8 +3,8 @@
 //mod crypto;
 //mod music_api;
 //mod request;
-mod bll;
 mod server;
+mod http;
 use crate::server::{start_server, Opt};
 use structopt::StructOpt;
 

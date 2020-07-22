@@ -6,7 +6,6 @@ use mobc_redis::{redis, Connection};
 use mysql::prelude::*;
 use mysql::*;
 use std::str;
-use serde_json::Value;
 
 #[derive(Serialize)]
 struct Success<T> {
@@ -21,6 +20,13 @@ struct Failed {
     message: String,
 }
 
+#[derive(Serialize)]
+struct Result<T> {
+    page: i32,
+    size: i32,
+    list: T,
+}
+
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 struct List {
     id: i32,
@@ -29,23 +35,35 @@ struct List {
     pull_url: String,
     server_name: String,
     created_at: String,
+    _type: i32,
 }
 
-pub(crate) async fn list(pool: web::Data<mysql::Pool>, _req: HttpRequest, _info: web::Json<Value>) -> impl Responder {
-    let id = _info.get("id").unwrap();
+pub(crate) async fn list(
+    pool: web::Data<mysql::Pool>,
+    _req: HttpRequest,
+    //_info: web::Json<Value>,
+) -> impl Responder {
+    //let id = _info.get("id").unwrap();
 
+    let id = _req.match_info().get("id").unwrap_or("1");
     let mut sql = String::from("");
-    sql.push_str("select id, status, name, pull_url, server_name, created_at  from t_media_screenshot ");
-    if id.is_string() {
-        sql.push_str(" where id = ");
-        sql.push_str(&id.to_string());
-    }
+    sql.push_str("select id, status, name, pull_url, server_name, created_at, type  from t_media_screenshot ");
+    sql.push_str(" where id >= ");
+    sql.push_str(&id.to_string());
     sql.push_str(" order by id desc");
 
     let mut conn = pool.get_conn().unwrap();
     let result = conn.query_map(
         sql,
-        |(id, status, name, pull_url, server_name, created_at)| List { id, status, name, pull_url, server_name, created_at },
+        |(id, status, name, pull_url, server_name, created_at, _type)| List {
+            id,
+            status,
+            name,
+            pull_url,
+            server_name,
+            created_at,
+            _type,
+        },
     );
 
     let list = match result {
@@ -56,7 +74,11 @@ pub(crate) async fn list(pool: web::Data<mysql::Pool>, _req: HttpRequest, _info:
     web::Json(Success {
         code: 1,
         message: "success".to_string(),
-        result: list,
+        result: Result {
+            page: 1,
+            size: 10,
+            list: list,
+        },
     })
 }
 
