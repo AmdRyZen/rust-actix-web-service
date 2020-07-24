@@ -38,6 +38,96 @@ struct List {
     _type: i32,
 }
 
+pub(crate) async fn insert(pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Responder {
+    let list = vec![List {
+        id: 10,
+        status: 1,
+        name: "name".to_string(),
+        pull_url: "pull_url".to_string(),
+        server_name: "server_name".to_string(),
+        created_at: "2020-07-23 00:00:00".to_string(),
+        _type: 1,
+    }];
+
+    let mut conn = pool.get_conn().unwrap();
+    let result = conn.exec_batch(
+        r"INSERT INTO t_media_screenshot (id, status, name, pull_url, server_name, created_at, type)
+          VALUES (:id, :status, :name, :pull_url, :server_name, :created_at, :type)",
+        list.iter().map(|p| {
+            params! {
+                "id" => p.id,
+                "status" => p.status,
+                "name" => &p.name,
+                "pull_url" => &p.pull_url,
+                "server_name" => &p.server_name,
+                "created_at" => &p.created_at,
+                "type" => &p._type,
+            }
+        }),
+    );
+
+    let ret = match result {
+        Ok(_result) => true,
+        Err(_e) => false,
+    };
+
+    web::Json(Success {
+        code: 1,
+        message: "success".to_string(),
+        result: ret,
+    })
+}
+
+pub(crate) async fn update(pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Responder {
+    let list = vec![
+        List {
+        id: 10,
+        status: 1,
+        name: "name_update".to_string(),
+        pull_url: "pull_url".to_string(),
+        server_name: "server_name".to_string(),
+        created_at: "2020-07-24 00:00:00".to_string(),
+        _type: 1,
+        },
+        List {
+        id: 9,
+        status: 1,
+        name: "9".to_string(),
+        pull_url: "pull_url".to_string(),
+        server_name: "server_name".to_string(),
+        created_at: "2020-07-24 00:00:00".to_string(),
+        _type: 1,
+    }
+    ];
+
+    let mut conn = pool.get_conn().unwrap();
+    let result = conn.exec_batch(
+        r"UPDATE t_media_screenshot
+        SET status = :status, name = :name, pull_url = :pull_url, server_name = :server_name, created_at = :created_at, type = :type
+        WHERE id = :id",
+        list.iter().map(|p| params! {
+            "status" => p.status,
+            "name" => &p.name,
+            "pull_url" => &p.pull_url,
+            "server_name" => &p.server_name,
+            "created_at" => &p.created_at,
+            "type" => &p._type,
+            "id" => p.id,
+        })
+    );
+
+    let ret = match result {
+        Ok(_result) => true,
+        Err(_e) => false,
+    };
+
+    web::Json(Success {
+        code: 1,
+        message: "success".to_string(),
+        result: ret,
+    })
+}
+
 pub(crate) async fn list(
     pool: web::Data<mysql::Pool>,
     _req: HttpRequest,
@@ -47,7 +137,9 @@ pub(crate) async fn list(
 
     let id = _req.match_info().get("id").unwrap_or("1");
     let mut sql = String::from("");
-    sql.push_str("select id, status, name, pull_url, server_name, created_at, type  from t_media_screenshot ");
+    sql.push_str(
+        "select id, status, name, pull_url, server_name, created_at, type from t_media_screenshot ",
+    );
     sql.push_str(" where id >= ");
     sql.push_str(&id.to_string());
     sql.push_str(" order by id desc");
@@ -91,6 +183,53 @@ let map : HashMap<String, i32> = con.hgetall("my_hash")?;
 let keys : Vec<String> = con.hkeys("my_hash")?;
 let mems : HashSet<i32> = con.smembers("my_set")?;
 let (k1, k2) : (String, String) = con.get(&["k1", "k2"])?;*/
+
+pub(crate) async fn get_list(
+    redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>,
+    req: HttpRequest,
+) -> impl Responder {
+    let league_id = req.match_info().get("league_id").unwrap_or("0");
+    let page = req.match_info().get("page").unwrap_or("1");
+    let size = req.match_info().get("size").unwrap_or("20");
+    let sport_id = req.match_info().get("sport_id").unwrap_or("0");
+
+    let mut set_key  = String::from("match_list_by_league_id_key_pre_set_");
+    set_key.push_str(&sport_id.to_string());
+    set_key.push_str("_");
+    set_key.push_str(&league_id.to_string());
+    set_key.push_str("_");
+    set_key.push_str("cn");
+    let limit_s: u8 = (page.parse::<u8>().unwrap()-1) * size.parse::<u8>().unwrap();
+    let limit_e: u8 = (limit_s + size.parse::<u8>().unwrap()) - 1;
+    let hash_key = String::from("match_list_key_pre_hash_cn");
+
+    let mut conn = redis_pool.get().await.unwrap();
+    let s: Vec<String> = redis::cmd("zrange")
+        .arg(set_key)
+        .arg(limit_s)
+        .arg(limit_e)
+        .query_async(&mut conn as &mut Connection)
+        .await
+        .unwrap_or(vec![]);
+
+    let m: Vec<String> = redis::cmd("hmget")
+        .arg(hash_key)
+        .arg(s)
+        .query_async(&mut conn as &mut Connection)
+        .await
+        .unwrap_or(vec![]);
+
+    println!("{:?}", m);
+
+    web::Json(Success {
+        code: 1,
+        message: "success".to_string(),
+        result: m,
+    })
+}
+
+
+
 pub(crate) async fn get(
     redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>,
     req: HttpRequest,

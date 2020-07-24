@@ -6,10 +6,10 @@ use structopt::StructOpt;
 //use crate::music_api::*;
 use crate::http::*;
 use futures::executor;
-use std::{sync::mpsc, thread};
 use mobc::Pool;
 use mobc_redis::redis;
 use mobc_redis::RedisConnectionManager;
+use std::{sync::mpsc, thread};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "rust-actix-web-service", about = "rust-actix-web-service")]
@@ -73,6 +73,9 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .service(web::resource("/get/{name}").route(web::get().to(get)))
             .service(web::resource("/set/{name}").route(web::get().to(set)))
             .service(web::resource("/list").route(web::get().to(list)))
+            .service(web::resource("/insert").route(web::get().to(insert)))
+            .service(web::resource("/update").route(web::get().to(update)))
+            .service(web::resource("/redis-list").route(web::get().to(get_list)))
     });
 
     let env = env::var("ENV").expect("ENV is not set in .env file");
