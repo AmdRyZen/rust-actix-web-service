@@ -1,8 +1,8 @@
-use actix_web::{get, HttpResponse};
+use actix_web::{web, Responder};
 use std::process::Command;
+use crate::http::response;
 
-#[get("/execute")]
-pub(crate) async fn execute() -> HttpResponse {
+pub(crate) async fn execute() -> impl Responder {
    /* let _output = Command::new("ls")
         .arg("-l")
         .arg("-a")
@@ -21,5 +21,9 @@ pub(crate) async fn execute() -> HttpResponse {
         .expect("ls command failed to start");
     println!("{:?}", ffmpeg);
 
-    HttpResponse::Ok().body("hello!")
+    web::Json(response::Success {
+        code: response::HTTP_OK,
+        message: response::HTTP_MSG.to_string(),
+        result: response::HTTP_MSG.to_string(),
+    })
 }
