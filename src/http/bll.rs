@@ -21,7 +21,7 @@ struct List {
 
 pub(crate) async fn insert(pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Responder {
     let list = vec![List {
-        id: 10,
+        id: 4,
         status: 1,
         name: "name".to_string(),
         pull_url: "pull_url".to_string(),
@@ -115,17 +115,34 @@ pub(crate) async fn list(
     //_info: web::Json<Value>,
 ) -> impl Responder {
     //let id = _info.get("id").unwrap();
-
     let id = _req.match_info().get("id").unwrap_or("1");
+
     let mut sql = String::from("");
+    let mut sql_where = String::from("");
+    let mut sql_count = String::from("");
+
+    sql_where.push_str(" where id >= ");
+    sql_where.push_str(&id.to_string());
+
     sql.push_str(
         "select id, status, name, pull_url, server_name, created_at, type from t_media_screenshot ",
     );
-    sql.push_str(" where id >= ");
-    sql.push_str(&id.to_string());
+    sql.push_str(&sql_where);
     sql.push_str(" order by id desc");
 
+    sql_count.push_str(
+        "select count(1) as total from t_media_screenshot ",
+    );
+    sql_count.push_str(&sql_where);
+
     let mut conn = pool.get_conn().unwrap();
+
+    let total: Result<Option<u32>> = conn.query_first(sql_count);
+    let count: u32 = match total {
+        Ok(total) => total.unwrap(),
+        Err(_e) => 0,
+    };
+
     let result = conn.query_map(
         sql,
         |(id, status, name, pull_url, server_name, created_at, _type)| List {
@@ -150,7 +167,7 @@ pub(crate) async fn list(
         result: response::Result {
             page: 1,
             size: 10,
-            count: 0,
+            count: count,
             list: list,
         },
     })
@@ -212,7 +229,7 @@ pub(crate) async fn get_list(
         .arg(&set_key)
         .query_async(&mut conn as &mut Connection)
         .await
-        .unwrap_or(0i32);
+        .unwrap_or(0u32);
 
     let mut list: Vec<Redislist> = vec![];
     for i in &m {

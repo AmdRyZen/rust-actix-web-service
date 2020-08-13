@@ -21,6 +21,6 @@ pub struct Failed {
 pub struct Result<T> {
     pub page: i32,
     pub size: i32,
-    pub count: i32,
+    pub count: u32,
     pub list: T,
 }
