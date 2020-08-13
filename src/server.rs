@@ -76,6 +76,7 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .service(web::resource("/insert").route(web::get().to(insert)))
             .service(web::resource("/update").route(web::get().to(update)))
             .service(web::resource("/redis-list").route(web::get().to(get_list)))
+            .service(execute)
     });
 
     let env = env::var("ENV").expect("ENV is not set in .env file");
