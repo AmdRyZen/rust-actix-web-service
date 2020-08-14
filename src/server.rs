@@ -5,11 +5,16 @@ use std::env;
 use structopt::StructOpt;
 //use crate::music_api::*;
 use crate::http::*;
+use elasticsearch::{
+    http::transport::{SingleNodeConnectionPool, TransportBuilder},
+    Elasticsearch,
+};
 use futures::executor;
 use mobc::Pool;
 use mobc_redis::redis;
 use mobc_redis::RedisConnectionManager;
 use std::{sync::mpsc, thread};
+use url::Url;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "rust-actix-web-service", about = "rust-actix-web-service")]
@@ -59,6 +64,17 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
     let manager = RedisConnectionManager::new(client);
     let redis_pool = Pool::builder().max_open(100).build(manager);
 
+    // es
+    let es_url = env::var("ES_URL").expect("ES_URL is not set in .env file");
+    let es_uri = Url::parse(&es_url).unwrap();
+    let conn_pool = SingleNodeConnectionPool::new(es_uri);
+    let transport = TransportBuilder::new(conn_pool)
+        .disable_proxy()
+        .build()
+        .unwrap();
+    let es_client = Elasticsearch::new(transport);
+    //println!("{:#?}", client);
+
     // start server as normal but don't .await after .run() yet
     let mut listenfd = ListenFd::from_env();
     let mut server = HttpServer::new(move || {
@@ -67,6 +83,7 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .data(pool.clone())
             .data(redis_pool.clone())
+            .data(es_client.clone())
             .service(test)
             .service(hello)
             .service(stop)
@@ -77,6 +94,8 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .service(web::resource("/update").route(web::get().to(update)))
             .service(web::resource("/redis-list").route(web::get().to(get_list)))
             .service(web::resource("/execute").route(web::get().to(execute)))
+            .service(web::resource("/es/index").route(web::get().to(index)))
+            .service(web::resource("/es/search").route(web::get().to(search)))
     });
 
     let env = env::var("ENV").expect("ENV is not set in .env file");

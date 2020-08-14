@@ -1,19 +1,17 @@
+use crate::http::response;
 use actix_web::{web, Responder};
 use std::process::Command;
-use crate::http::response;
 
 pub async fn execute() -> impl Responder {
-   /* let _output = Command::new("ls")
-        .arg("-l")
-        .arg("-a")
-        .spawn()
-        .expect("ls command failed to start");*/
-
+    /* let _output = Command::new("ls")
+    .arg("-l")
+    .arg("-a")
+    .spawn()
+    .expect("ls command failed to start");*/
 
     /*let pwd = Command::new("pwd")
-        .spawn()
-        .expect("ls command failed to start");*/
-
+    .spawn()
+    .expect("ls command failed to start");*/
 
     let _ffmpeg = Command::new("ffmpeg")
         .arg("-version")

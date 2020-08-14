@@ -1,12 +1,12 @@
 use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 extern crate serde_json;
+use crate::http::response;
 use mobc_redis::RedisConnectionManager;
 use mobc_redis::{redis, Connection};
 use mysql::prelude::*;
 use mysql::*;
 use std::str;
-use crate::http::response;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 struct List {
@@ -19,7 +19,7 @@ struct List {
     _type: i32,
 }
 
-pub(crate) async fn insert(pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Responder {
+pub async fn insert(pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Responder {
     let list = vec![List {
         id: 4,
         status: 1,
@@ -59,7 +59,7 @@ pub(crate) async fn insert(pool: web::Data<mysql::Pool>, _req: HttpRequest) -> i
     })
 }
 
-pub(crate) async fn update(pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Responder {
+pub async fn update(pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Responder {
     let list = vec![
         List {
             id: 10,
@@ -109,7 +109,7 @@ pub(crate) async fn update(pool: web::Data<mysql::Pool>, _req: HttpRequest) -> i
     })
 }
 
-pub(crate) async fn list(
+pub async fn list(
     pool: web::Data<mysql::Pool>,
     _req: HttpRequest,
     //_info: web::Json<Value>,
@@ -130,9 +130,7 @@ pub(crate) async fn list(
     sql.push_str(&sql_where);
     sql.push_str(" order by id desc");
 
-    sql_count.push_str(
-        "select count(1) as total from t_media_screenshot ",
-    );
+    sql_count.push_str("select count(1) as total from t_media_screenshot ");
     sql_count.push_str(&sql_where);
 
     let mut conn = pool.get_conn().unwrap();
@@ -190,7 +188,7 @@ struct Redislist {
     sport_name: String,
     region_name: String,
 }
-pub(crate) async fn get_list(
+pub async fn get_list(
     redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>,
     req: HttpRequest,
 ) -> impl Responder {
@@ -250,7 +248,7 @@ pub(crate) async fn get_list(
     })
 }
 
-pub(crate) async fn get(
+pub async fn get(
     redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>,
     req: HttpRequest,
 ) -> impl Responder {
@@ -270,7 +268,7 @@ pub(crate) async fn get(
     })
 }
 
-pub(crate) async fn set(
+pub async fn set(
     redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>,
     req: HttpRequest,
 ) -> impl Responder {
@@ -291,7 +289,7 @@ pub(crate) async fn set(
 }
 
 #[get("/test")]
-pub(crate) async fn test() -> HttpResponse {
+pub async fn test() -> HttpResponse {
     loop {
         println!("loop");
     }
