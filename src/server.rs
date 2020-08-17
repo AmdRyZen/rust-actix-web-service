@@ -97,6 +97,8 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .service(web::resource("/es/index").route(web::get().to(index)))
             .service(web::resource("/es/search").route(web::get().to(search)))
             .service(web::resource("/select").route(web::get().to(select)))
+            .service(web::resource("/jwt/signing").route(web::get().to(signing)))
+            .service(web::resource("/jwt/verification").route(web::get().to(verification)))
     });
 
     let env = env::var("ENV").expect("ENV is not set in .env file");

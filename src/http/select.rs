@@ -1,11 +1,11 @@
 use crate::http::response;
 use actix_web::{web, Responder};
 use futures::{select, future::FutureExt, pin_mut};
-use tokio::runtime::Runtime;
+//use tokio::runtime::Runtime;
 use std::io::Result;
 
 pub async fn select() -> impl Responder {
-    async_main();
+    let _trest = async_main();
     println!("Hello, world!");
 
     web::Json(response::Success {
