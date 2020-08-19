@@ -19,8 +19,8 @@ pub struct Failed {
 
 #[derive(Serialize)]
 pub struct Result<T> {
-    pub page: i32,
-    pub size: i32,
-    pub count: u32,
+    pub page: i64,
+    pub size: i64,
+    pub count: u64,
     pub list: T,
 }

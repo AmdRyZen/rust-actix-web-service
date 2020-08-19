@@ -37,15 +37,18 @@ struct SearchList {
     www: String,
 }
 pub async fn search(es_client: web::Data<Elasticsearch>, req: HttpRequest) -> impl Responder {
-    let page = req.match_info().get("page").unwrap_or("1");
-    let size = req.match_info().get("size").unwrap_or("20");
+    //let page = req.match_info().get("page").unwrap_or("1");
+    //let size = req.match_info().get("size").unwrap_or("20");
+    let page: i64 = req.match_info().query("page").parse().unwrap_or(1);
+    let size: i64 = req.match_info().query("size").parse().unwrap_or(20);
+
     let message = req
         .match_info()
         .get("message")
         .unwrap_or("Elasticsearch rust");
 
-    let limit_s: i64 = (page.parse::<i64>().unwrap() - 1) * size.parse::<i64>().unwrap();
-    let limit_e: i64 = (limit_s + size.parse::<i64>().unwrap()) - 1;
+    let limit_s: i64 = (page - 1) * size;
+    let limit_e: i64 = (limit_s + size) - 1;
 
     let ret = es_client
         .search(SearchParts::Index(&["tweets"]))
@@ -84,8 +87,8 @@ pub async fn search(es_client: web::Data<Elasticsearch>, req: HttpRequest) -> im
         code: response::HTTP_OK,
         message: response::HTTP_MSG.to_string(),
         result: response::Result {
-            page: page.parse::<i32>().unwrap(),
-            size: size.parse::<i32>().unwrap(),
+            page: page,
+            size: size,
             count: 0,
             list: list,
         },

@@ -135,8 +135,8 @@ pub async fn list(
 
     let mut conn = pool.get_conn().unwrap();
 
-    let total: Result<Option<u32>> = conn.query_first(sql_count);
-    let count: u32 = match total {
+    let total: Result<Option<u64>> = conn.query_first(sql_count);
+    let count: u64 = match total {
         Ok(total) => total.unwrap(),
         Err(_e) => 0,
     };
@@ -192,9 +192,9 @@ pub async fn get_list(
     redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>,
     req: HttpRequest,
 ) -> impl Responder {
+    let page: i64 = req.match_info().query("page").parse().unwrap_or(1);
+    let size: i64 = req.match_info().query("size").parse().unwrap_or(20);
     let league_id = req.match_info().get("league_id").unwrap_or("0");
-    let page = req.match_info().get("page").unwrap_or("1");
-    let size = req.match_info().get("size").unwrap_or("20");
     let sport_id = req.match_info().get("sport_id").unwrap_or("0");
 
     let mut set_key = String::from("match_list_by_league_id_key_pre_set_");
@@ -203,8 +203,8 @@ pub async fn get_list(
     set_key.push_str(&league_id.to_string());
     set_key.push_str("_");
     set_key.push_str("cn");
-    let limit_s: u8 = (page.parse::<u8>().unwrap() - 1) * size.parse::<u8>().unwrap();
-    let limit_e: u8 = (limit_s + size.parse::<u8>().unwrap()) - 1;
+    let limit_s: i64 = (page - 1) * size;
+    let limit_e: i64 = (limit_s + size) - 1;
     let hash_key = String::from("match_list_key_pre_hash_cn");
 
     let mut conn = redis_pool.get().await.unwrap();
@@ -227,7 +227,7 @@ pub async fn get_list(
         .arg(&set_key)
         .query_async(&mut conn as &mut Connection)
         .await
-        .unwrap_or(0u32);
+        .unwrap_or(0u64);
 
     let mut list: Vec<Redislist> = vec![];
     for i in &m {
@@ -240,8 +240,8 @@ pub async fn get_list(
         code: response::HTTP_OK,
         message: response::HTTP_MSG.to_string(),
         result: response::Result {
-            page: page.parse::<i32>().unwrap(),
-            size: size.parse::<i32>().unwrap(),
+            page: page,
+            size: size,
             count: count,
             list: list,
         },

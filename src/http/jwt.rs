@@ -2,9 +2,9 @@ use crate::http::response;
 use actix_web::{web, HttpRequest, Responder};
 use serde::{Serialize, Deserialize};
 use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey};
-use jsonwebtoken::errors::ErrorKind;
 use chrono::prelude::*;
 extern crate chrono;
+use std::str;
 
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,21 +47,26 @@ pub async fn signing() -> impl Responder {
 }
 
 pub async fn verification(_req: HttpRequest) -> impl Responder {
-    let _token = _req.match_info().get("id").unwrap_or("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsb2dpbiI6ImxvZ2luIiwiZXhwIjoxNTk3NzY2MjI1LCJpYXQiOjE1OTc2Nzk4MjUsImlzcyI6Imh1emhpY2hhbyIsInN1YiI6Imp3dCJ9.0dM3Z3kwABZcred5ZVlyaUWg2FlTQfkEQF5-bn_ZBpQ");
+    let headers = _req.headers();
+    let token = headers.get("Authorization").unwrap();
+    let jwt = token.to_str().unwrap_or("");
+
     //let decode_token = decode::<Claims>(&token, &DecodingKey::from_secret("secret".as_ref()), &Validation::default());
-
-    let token_data =
-        match decode::<Claims>(&_token, &DecodingKey::from_secret("secret".as_ref()), &Validation::default()) {
+   /* let token_data =
+        match decode::<Claims>(&jwt, &DecodingKey::from_secret("secret".as_ref()), &Validation::default()) {
             Ok(c) => c,
-            Err(err) => match *err.kind() {
-                ErrorKind::InvalidToken => panic!(), // Example on how to handle a specific error
-                _ => panic!(),
-            },
+            Err(_err) => panic!(),
         };
+    println!("{:?}", token_data);*/
 
+    let is_ok  =
+        match decode::<Claims>(&jwt, &DecodingKey::from_secret("secret".as_ref()), &Validation::default()) {
+            Ok(_c) => true,
+            Err(_err) => false,
+        };
     web::Json(response::Success {
         code: response::HTTP_OK,
         message: response::HTTP_MSG.to_string(),
-        result: token_data.claims,
+        result: is_ok,
     })
 }
