@@ -1,4 +1,6 @@
 use actix_web::{get, middleware, web, App, HttpResponse, HttpServer};
+use actix_web::middleware::errhandlers::{ErrorHandlerResponse, ErrorHandlers};
+use actix_web::{dev, http, Result};
 use dotenv::dotenv;
 use listenfd::ListenFd;
 use std::env;
@@ -15,6 +17,7 @@ use mobc_redis::redis;
 use mobc_redis::RedisConnectionManager;
 use std::{sync::mpsc, thread};
 use url::Url;
+use crate::auth;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "rust-actix-web-service", about = "rust-actix-web-service")]
@@ -37,6 +40,14 @@ async fn stop(stopper: web::Data<mpsc::Sender<()>>) -> HttpResponse {
     stopper.send(()).unwrap();
 
     HttpResponse::NoContent().finish()
+}
+
+fn render_500<B>(mut res: dev::ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
+    res.response_mut().headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        http::HeaderValue::from_static("Error"),
+    );
+    Ok(ErrorHandlerResponse::Response(res))
 }
 
 // systemfd --no-pid -s http::8000 -- cargo watch -x run
@@ -81,6 +92,8 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
         App::new()
             .data(tx.clone())
             .wrap(middleware::Logger::default())
+            .wrap(auth::CheckLogin)
+            .wrap(ErrorHandlers::new().handler(http::StatusCode::INTERNAL_SERVER_ERROR, render_500))
             .data(pool.clone())
             .data(redis_pool.clone())
             .data(es_client.clone())
@@ -120,7 +133,6 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             // stop server gracefully
             executor::block_on(srv.stop(true))
         });
-
         // run server
         server.await
     }

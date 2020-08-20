@@ -5,6 +5,7 @@
 //mod request;
 mod server;
 mod http;
+mod auth;
 use crate::server::{start_server, Opt};
 use structopt::StructOpt;
 

@@ -1,8 +1,10 @@
 use serde::Serialize;
 
+pub const _HTTP_NO_LOGIN: i32 = 401;
 pub const HTTP_OK: i32 = 1;
 //pub const HTTP_ERROR: i32 = 0;
 pub const HTTP_MSG: &str = "success";
+pub const _HTTP_MSG_NO_LOGIN: &str = "no_login";
 
 #[derive(Serialize)]
 pub struct Success<T> {
