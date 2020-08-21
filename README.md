@@ -1,38 +1,52 @@
 <br>
 
 <p align="center">
-<img src="https://actix.rs/img/logo-large.png" alt="Rust">
+<img src="https://picb.zhimg.com/v2-cb1db68b184ed26bc6e2ff0b3108a827_1440w.jpg?source=172ae18b" alt="Rust">
 </p>
 
+<p align="center">高性能 • 轻量级 • 命令行 • Tokio异步IO</p>
 
-# RUST API
+# RUST
 rust-actix-web-service
 
 ## 实现说明
-此实现是为了学习Rust和actix-web框架而写的
-rust-actix-web-service
+
+基于 actix-web actixactor框架和Tokio 异步IO系统之上构建的高级Web框架部分 以及对其他组件的集成， 包括但不限于(MySQL Redis elasticsearch CheckLoginMiddleware  jsonwebtoken等)
 
 ## 环境要求
 
 需要 Rust1.39+, actix_web2.0
 
+
+## 框架定位
+
+绝对性能优先 基于Tokio异步IO的无栈协成
+
 ## 安装运行
 
-```shell
-systemfd --no-pid -s http::8000 -- cargo watch -x run
-cargo run
-cargo update
-cargo build --release
-sudo nohup ./target/release/rust-actix-web-service &
-
-
-Linux 交叉  CROSS_COMPILE=x86_64-linux-musl- cargo build --release --target x86_64-unknown-linux-musl
+```
+sudo sh start.sh [dev|prod|build|linux]
 ```
 服务器启动默认端口为 8000
 
+
+## 性能测试
+One of the fastest web frameworks available according to the TechEmpower Framework Benchmark.
+
+
 ## 使用文档
 
-[文档地址]
+[文档地址](https://actix.rs/docs/)
+
+##如果一切顺利，运行到最后你将看到如下的输出：
+```
+============2020-08-22 00:20:12===========
+~> socket http://127.0.0.1:8000/
+[Running 'cargo run']
+    Finished dev [unoptimized + debuginfo] target(s) in 0.42s
+     Running `target/debug/rust-actix-web-service`
+```
+
 
 ## License
 
