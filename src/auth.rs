@@ -1,26 +1,28 @@
-use std::cell::RefCell;
-use std::pin::Pin;
-use std::rc::Rc;
 use std::task::{Context, Poll};
 
 use actix_service::{Service, Transform};
-use actix_web::{dev::ServiceRequest, dev::ServiceResponse, Error, HttpMessage};
-use bytes::BytesMut;
-use futures::future::{ok, Future, Ready};
-use futures::stream::StreamExt;
-use actix_web::{web, Responder};
-
+use actix_web::dev::{ServiceRequest, ServiceResponse};
+use actix_web::{http, Error, HttpResponse};
+use futures::future::{ok, Either, Ready};
 use jsonwebtoken::{decode, Validation, DecodingKey};
 use serde::{Serialize, Deserialize};
-use crate::http::response;
+use actix_web::http::{HeaderValue};
 
 pub struct CheckLogin;
 
-impl<S: 'static, B> Transform<S> for CheckLogin
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub login: String,         // 可选。听众
+    pub exp: i64,          // 必须。(validate_exp 在验证中默认为真值)。截止时间 (UTC 时间戳)
+    pub iat: i64,          // 可选。发布时间 (UTC 时间戳)
+    pub iss: String,         // 可选。发布者
+    pub sub: String,         // 可选。标题 (令牌指向的人)
+}
+
+impl<S, B> Transform<S> for CheckLogin
     where
         S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
         S::Future: 'static,
-        B: 'static,
 {
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
@@ -30,76 +32,57 @@ impl<S: 'static, B> Transform<S> for CheckLogin
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ok(CheckLoginMiddleware {
-            service: Rc::new(RefCell::new(service)),
-        })
+        ok(CheckLoginMiddleware { service })
     }
 }
-
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    login: String,         // 可选。听众
-    exp: i64,          // 必须。(validate_exp 在验证中默认为真值)。截止时间 (UTC 时间戳)
-    iat: i64,          // 可选。发布时间 (UTC 时间戳)
-    iss: String,         // 可选。发布者
-    sub: String,         // 可选。标题 (令牌指向的人)
-}
-
 pub struct CheckLoginMiddleware<S> {
-    // This is special: We need this to avoid lifetime issues.
-    service: Rc<RefCell<S>>,
+    service: S,
 }
 
 impl<S, B> Service for CheckLoginMiddleware<S>
     where
-        S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>
-        + 'static,
+        S: Service<Request = ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
         S::Future: 'static,
-        B: 'static,
 {
     type Request = ServiceRequest;
     type Response = ServiceResponse<B>;
     type Error = Error;
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
+    type Future = Either<S::Future, Ready<Result<Self::Response, Self::Error>>>;
 
     fn poll_ready(&mut self, cx: &mut Context) -> Poll<Result<(), Self::Error>> {
         self.service.poll_ready(cx)
     }
 
-    fn call(&mut self, mut req: ServiceRequest) -> Self::Future {
-        let mut svc = self.service.clone();
+    fn call(&mut self, req: ServiceRequest) -> Self::Future {
+        // We only need to hook into the `start` for this middleware.
+        // let is_logged_in = true; // Change this to see the change in outcome in the browser
 
-        Box::pin(async move {
-            let mut body = BytesMut::new();
-            let mut stream = req.take_payload();
-            while let Some(chunk) = stream.next().await {
-                body.extend_from_slice(&chunk?);
-            }
-            //println!("Hi from start. You requested: {}", req.path());
-            let token = req.headers().get("authorization").unwrap();
-            let jwt = token.to_str().unwrap();
-            let decode_token = decode::<Claims>(&jwt, &DecodingKey::from_secret("secret".as_ref()), &Validation::default());
+        //println!("Hi from start. You requested: {}", req.path());
+        let val = HeaderValue::from_static("");
+        let token: &HeaderValue = req.headers().get("authorization").unwrap_or(&val);
+        let jwt = token.to_str().unwrap();
+        let decode_token = decode::<Claims>(&jwt, &DecodingKey::from_secret("secret".as_ref()), &Validation::default());
 
-            let is_ok = match decode_token {
-                Ok(_c) => true,
-                _ => false
-            };
-            let res = svc.call(req).await?;
-            if is_ok {
-                Ok(res)
+        let is_logged_in = match decode_token {
+            Ok(_c) => true,
+            _ => false
+        };
+
+        if is_logged_in {
+            Either::Left(self.service.call(req))
+        } else {
+            // Don't forward to /login if we are already on /login
+            if req.path() != "/jwt/verification" {
+                Either::Left(self.service.call(req))
             } else {
-                println!("Hi from start. You requested: {}", "authorization err");
-                Ok(res)
+                //println!("Hi from start. You requested: {}", is_logged_in);
+                Either::Right(ok(req.into_response(
+                    HttpResponse::Found()
+                        .header(http::header::LOCATION, "/jwt/render_401")
+                        .finish()
+                        .into_body(),
+                )))
             }
-        })
+        }
     }
-}
-
-fn _verification() -> impl Responder {
-    return web::Json(response::Success {
-        code: response::_HTTP_NO_LOGIN,
-        message: response::_HTTP_MSG_NO_LOGIN.to_string(),
-        result: false
-    });
 }

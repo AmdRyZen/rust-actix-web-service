@@ -1,30 +1,16 @@
 use crate::http::response;
 use actix_web::{web, HttpRequest, Responder};
-use serde::{Serialize, Deserialize};
 use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey};
 use chrono::prelude::*;
 extern crate chrono;
-use std::str;
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    login: String,         // 可选。听众
-    exp: i64,          // 必须。(validate_exp 在验证中默认为真值)。截止时间 (UTC 时间戳)
-    iat: i64,          // 可选。发布时间 (UTC 时间戳)
-    iss: String,         // 可选。发布者
-    sub: String,         // 可选。标题 (令牌指向的人)
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Jwt {
-    jwt: String,
-}
+use actix_web::http::{HeaderValue};
+use crate::auth;
 
 pub async fn signing() -> impl Responder {
     let dt = Local::now();
     let exp  = dt.timestamp() + 86400;
 
-    let my_claims = Claims {
+    let my_claims = auth::Claims {
         login: "login".to_owned(),
         exp: exp,
         iat: dt.timestamp(),
@@ -47,10 +33,11 @@ pub async fn signing() -> impl Responder {
 
 pub async fn verification(_req: HttpRequest) -> impl Responder {
     let headers = _req.headers();
-    let token = headers.get("Authorization").unwrap();
+    let val = HeaderValue::from_static("");
+    let token = headers.get("Authorization").unwrap_or(&val);
     let jwt = token.to_str().unwrap_or("");
 
-    let decode_token = decode::<Claims>(&jwt, &DecodingKey::from_secret("secret".as_ref()), &Validation::default());
+    let decode_token = decode::<auth::Claims>(&jwt, &DecodingKey::from_secret("secret".as_ref()), &Validation::default());
     match decode_token {
         Ok(c) => {
             return web::Json(response::Success {
@@ -61,9 +48,9 @@ pub async fn verification(_req: HttpRequest) -> impl Responder {
         },
         _ => {
             return web::Json(response::Success {
-                code: response::HTTP_OK,
-                message: response::HTTP_MSG.to_string(),
-                result: Claims {
+                code: response::_HTTP_NO_LOGIN,
+                message: response::_HTTP_MSG_NO_LOGIN.to_string(),
+                result: auth::Claims {
                     login: "err".to_owned(),
                     exp: 0,
                     iat: 0,
@@ -73,6 +60,16 @@ pub async fn verification(_req: HttpRequest) -> impl Responder {
             });
         },
     };
+}
+
+
+
+pub async fn render_401() -> impl Responder {
+    return web::Json(response::Success {
+        code: response::_HTTP_NO_LOGIN,
+        message: response::_HTTP_MSG_NO_LOGIN.to_string(),
+        result: false,
+    });
 }
 /*use actix_web::{HttpRequest};
 
