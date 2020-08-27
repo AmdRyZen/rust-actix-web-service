@@ -113,6 +113,7 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .service(web::resource("/jwt/signing").route(web::get().to(signing)))
             .service(web::resource("/jwt/verification").route(web::get().to(verification)))
             .service(web::resource("/jwt/render_401").route(web::get().to(render_401)))
+            .service(web::resource("/match/list").route(web::get().to(match_list)))
     });
 
     let env = env::var("ENV").expect("ENV is not set in .env file");
