@@ -1,26 +1,30 @@
 use crate::http::response;
 use actix_web::{web, HttpRequest, Responder};
-use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey};
 use chrono::prelude::*;
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 extern crate chrono;
-use actix_web::http::{HeaderValue};
 use crate::auth;
+use actix_web::http::HeaderValue;
 
 pub async fn signing() -> impl Responder {
     let dt = Local::now();
-    let exp  = dt.timestamp() + 86400;
+    let exp = dt.timestamp() + 86400;
 
     let my_claims = auth::Claims {
         login: "login".to_owned(),
         exp: exp,
         iat: dt.timestamp(),
         iss: "huzhichao".to_owned(),
-        sub: "jwt".to_owned()
+        sub: "jwt".to_owned(),
     };
 
-    let token = encode(&Header::default(), &my_claims, &EncodingKey::from_secret("secret".as_ref()));
+    let token = encode(
+        &Header::default(),
+        &my_claims,
+        &EncodingKey::from_secret("secret".as_ref()),
+    );
     let jwt = match token {
-        Ok(token) => { token },
+        Ok(token) => token,
         Err(_e) => "".to_string(),
     };
 
@@ -37,7 +41,11 @@ pub async fn verification(_req: HttpRequest) -> impl Responder {
     let token = headers.get("Authorization").unwrap_or(&val);
     let jwt = token.to_str().unwrap_or("");
 
-    let decode_token = decode::<auth::Claims>(&jwt, &DecodingKey::from_secret("secret".as_ref()), &Validation::default());
+    let decode_token = decode::<auth::Claims>(
+        &jwt,
+        &DecodingKey::from_secret("secret".as_ref()),
+        &Validation::default(),
+    );
     match decode_token {
         Ok(c) => {
             return web::Json(response::Success {
@@ -45,7 +53,7 @@ pub async fn verification(_req: HttpRequest) -> impl Responder {
                 message: response::HTTP_MSG.to_string(),
                 result: c.claims,
             });
-        },
+        }
         _ => {
             return web::Json(response::Success {
                 code: response::_HTTP_NO_LOGIN,
@@ -55,14 +63,12 @@ pub async fn verification(_req: HttpRequest) -> impl Responder {
                     exp: 0,
                     iat: 0,
                     iss: "".to_owned(),
-                    sub: "".to_owned()
+                    sub: "".to_owned(),
                 },
             });
-        },
+        }
     };
 }
-
-
 
 pub async fn render_401() -> impl Responder {
     return web::Json(response::Success {

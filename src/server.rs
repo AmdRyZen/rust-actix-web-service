@@ -1,11 +1,12 @@
-use actix_web::{get, middleware, web, App, HttpResponse, HttpServer};
 use actix_web::middleware::errhandlers::{ErrorHandlerResponse, ErrorHandlers};
 use actix_web::{dev, http, Result};
+use actix_web::{get, middleware, web, App, HttpResponse, HttpServer};
 use dotenv::dotenv;
 use listenfd::ListenFd;
 use std::env;
 use structopt::StructOpt;
 //use crate::music_api::*;
+use crate::auth;
 use crate::http::*;
 use elasticsearch::{
     http::transport::{SingleNodeConnectionPool, TransportBuilder},
@@ -17,7 +18,6 @@ use mobc_redis::redis;
 use mobc_redis::RedisConnectionManager;
 use std::{sync::mpsc, thread};
 use url::Url;
-use crate::auth;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "rust-actix-web-service", about = "rust-actix-web-service")]

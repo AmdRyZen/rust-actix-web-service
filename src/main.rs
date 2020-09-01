@@ -4,9 +4,9 @@
 //mod music_api;
 //mod request;
 mod server;
+mod auth;
 mod http;
 mod service;
-mod auth;
 use crate::server::{start_server, Opt};
 use structopt::StructOpt;
 
