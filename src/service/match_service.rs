@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use actix_web::{web, HttpRequest};
 use mysql::prelude::*;
 use mysql::*;
+use curl::easy::Easy;
+use std::io::{stdout, Write};
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Match {
@@ -62,5 +64,20 @@ impl Match
          };
 
          (count, list)
+    }
+
+    pub async fn curl() -> (u32, ()) {
+        let mut handle = Easy::new();
+        handle.url("127.0.0.1:8000/match/list").unwrap();
+        handle.write_function(|data| {
+           stdout().write_all(data).unwrap();
+           Ok(data.len())
+        }).unwrap();
+        handle.perform().ok().unwrap();
+        let _code = handle.response_code().unwrap();
+        let _err = handle.perform().err();
+
+        //println!("{:#?}", _code);
+        (_code, ())
     }
 }
