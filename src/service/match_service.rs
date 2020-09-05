@@ -76,8 +76,7 @@ impl Match {
             .unwrap();
         handle.perform().ok().unwrap();
         let _code = handle.response_code().unwrap();
-        let _err = handle.perform().err();
-
+        //let _err = handle.perform().err();
         //println!("{:#?}", _code);
         (_code, ())
     }
