@@ -1,7 +1,7 @@
 mod bll;
 mod es;
 mod jwt;
-mod match_controller;
+mod controller;
 pub mod response;
 mod select;
 mod shell;
@@ -9,7 +9,7 @@ mod shell;
 pub use bll::*;
 pub use es::*;
 pub use jwt::*;
-pub use match_controller::*;
+pub use controller::*;
 pub use response::*;
 pub use select::*;
 pub use shell::*;

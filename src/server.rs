@@ -115,6 +115,7 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .service(web::resource("/jwt/render_401").route(web::get().to(render_401)))
             .service(web::resource("/match/list").route(web::get().to(match_list)))
             .service(web::resource("/match/curl").route(web::get().to(curl)))
+            .service(web::resource("/hashmap").route(web::get().to(hashmap)))
     });
 
     let env = env::var("ENV").expect("ENV is not set in .env file");
