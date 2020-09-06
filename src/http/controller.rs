@@ -72,3 +72,30 @@ pub async fn hashmap() -> impl Responder {
         result: contacts,
     })
 }
+
+pub async fn queue() -> impl Responder {
+    let mut q = queue_service::Queue::new(10).await;
+    for i in 0..50 {
+        if let Err(error) = q.enqueue(i).await {
+            println!("err: {:?}", error);
+        }
+    }
+    println!("q: {:#?}", q);
+
+    for _ in 0..11 {
+        if let Some(data) = q.dequeue().await {
+            println!("data: {:?}", data);
+        } else {
+            println!("data: None");
+        }
+    }
+
+    let _size = q.size().await;
+    //println!("size: {:#?}", q);
+
+    web::Json(response::Success {
+        code: response::HTTP_OK,
+        message: response::HTTP_MSG.to_string(),
+        result: _size,
+    })
+}
