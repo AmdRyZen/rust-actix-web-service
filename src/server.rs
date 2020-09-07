@@ -7,7 +7,7 @@ use std::env;
 use structopt::StructOpt;
 //use crate::music_api::*;
 use crate::auth;
-use crate::http::*;
+use crate::controller::*;
 use elasticsearch::{
     http::transport::{SingleNodeConnectionPool, TransportBuilder},
     Elasticsearch,

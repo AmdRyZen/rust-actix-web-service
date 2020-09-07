@@ -1,4 +1,4 @@
-use crate::http::response;
+use crate::controller::response;
 use actix_web::{web, HttpRequest, Responder};
 use chrono::prelude::*;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};

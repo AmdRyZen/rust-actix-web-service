@@ -1,7 +1,7 @@
 use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 extern crate serde_json;
-use crate::http::response;
+use crate::controller::response;
 use mobc_redis::RedisConnectionManager;
 use mobc_redis::{redis, Connection};
 use mysql::prelude::*;
