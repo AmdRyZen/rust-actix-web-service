@@ -1,10 +1,10 @@
 use crate::http::*;
 use crate::service::*;
 use actix_web::{web, HttpRequest, Responder};
-use std::collections::HashMap;
 use mobc_redis::RedisConnectionManager;
 use mobc_redis::{redis, Connection};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 extern crate serde_json;
 
 pub async fn match_list(_pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Responder {
@@ -104,14 +104,12 @@ pub async fn queue() -> impl Responder {
     })
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 struct Pushdata {
     id: i64,
     name: String,
 }
 pub async fn lpush(_redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>) -> impl Responder {
-
     let mut conn = _redis_pool.get().await.unwrap();
     let data = Pushdata {
         id: 10,
