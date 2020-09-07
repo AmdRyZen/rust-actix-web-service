@@ -1,5 +1,5 @@
 [package]
-name = "rust-cli"
+name = "rust-actix-web-service"
 version = "0.1.0"
 authors = ["stefano <huzhichao502@gmail.com>"]
 edition = "2018"
