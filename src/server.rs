@@ -117,6 +117,7 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .service(web::resource("/match/curl").route(web::get().to(curl)))
             .service(web::resource("/hashmap").route(web::get().to(hashmap)))
             .service(web::resource("/queue").route(web::get().to(queue)))
+            .service(web::resource("/lpush").route(web::get().to(lpush)))
     });
 
     let env = env::var("ENV").expect("ENV is not set in .env file");
