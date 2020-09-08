@@ -23,7 +23,7 @@ serde = { version = "1.0.71", features = ["derive"] }
 openssl = { version = "0.10", features = ["vendored"] }
 mobc-redis = "0.5.3"
 mobc = "0.5.7"
-tokio = {version = "0.2.13", features = ["full"]}
+tokio = {version = "0.2.22", features = ["full"]}
 elasticsearch = "7.8.1-alpha.1"
 url = "2.1.1"
 dgraph-tonic = "0.5.0"
