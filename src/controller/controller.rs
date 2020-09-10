@@ -131,3 +131,15 @@ pub async fn lpush(_redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>) -
         result: s,
     })
 }
+
+pub async fn function() -> impl Responder {
+    let mut  num = 10;
+    let mut add_num = | x: i32 | num += x;
+    add_num(15);
+    //println!("s: {:#?}", s);
+    web::Json(response::Success {
+        code: response::HTTP_OK,
+        message: response::HTTP_MSG.to_string(),
+        result: num,
+    })
+}
