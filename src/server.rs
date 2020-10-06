@@ -119,8 +119,8 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .service(web::resource("/queue").route(web::get().to(queue)))
             .service(web::resource("/lpush").route(web::get().to(lpush)))
             .service(web::resource("/function").route(web::get().to(function)))
-            .default_service(
-                web::route().to(|| HttpResponse::NotFound()))
+            .service(web::resource("/first").route(web::get().to(get_first)))
+            .default_service(web::route().to(|| HttpResponse::NotFound()))
     });
 
     let env = env::var("ENV").expect("ENV is not set in .env file");

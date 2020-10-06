@@ -1,4 +1,4 @@
-use crate::controller::*;
+use crate::controller::response;
 use crate::service::*;
 use actix_web::{web, HttpRequest, Responder};
 use mobc_redis::RedisConnectionManager;
@@ -6,6 +6,27 @@ use mobc_redis::{redis, Connection};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 extern crate serde_json;
+use mysql::prelude::*;
+use mysql::*;
+
+pub async fn get_first(pool: web::Data<mysql::Pool>) -> impl Responder {
+    let mut conn = pool.get_conn().unwrap();
+
+    let raw: Result<Option<String>> = conn.exec_first(
+        "select name from t_media_screenshot where id = :id ",
+        params! { "id" => 4},
+    );
+    let name = match raw {
+        Ok(raw) => raw.unwrap(),
+        _ => "".to_string(),
+    };
+    //println!("s: {:#?}", name);
+    web::Json(response::Success {
+        code: response::HTTP_OK,
+        message: response::HTTP_MSG.to_string(),
+        result: name,
+    })
+}
 
 pub async fn match_list(_pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Responder {
     let (count, list) = Match::list(_pool, _req).await;
@@ -133,8 +154,8 @@ pub async fn lpush(_redis_pool: web::Data<mobc::Pool<RedisConnectionManager>>) -
 }
 
 pub async fn function() -> impl Responder {
-    let mut  num = 10;
-    let mut add_num = | x: i32 | num += x;
+    let mut num = 10;
+    let mut add_num = |x: i32| num += x;
     add_num(15);
     //println!("s: {:#?}", s);
     web::Json(response::Success {
