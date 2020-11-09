@@ -3,6 +3,8 @@ use actix_web::{web, Responder};
 use futures::{future::FutureExt, pin_mut, select};
 //use tokio::runtime::Runtime;
 use std::io::Result;
+use std::thread;
+use std::time::Duration;
 
 pub async fn select() -> impl Responder {
     let _trest = async_main();
@@ -28,7 +30,7 @@ async fn async_main() {
 }
 
 async fn function1() -> Result<()> {
-    tokio::time::delay_for(tokio::time::Duration::from_secs(10)).await;
+    thread::sleep(Duration::from_secs(2));
     println!("function1 ++++ ");
     Ok(())
 }
