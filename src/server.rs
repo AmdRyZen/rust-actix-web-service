@@ -120,6 +120,7 @@ pub(crate) async fn start_server(opt: &Opt) -> std::io::Result<()> {
             .service(web::resource("/lpush").route(web::get().to(lpush)))
             .service(web::resource("/function").route(web::get().to(function)))
             .service(web::resource("/first").route(web::get().to(get_first)))
+            .service(web::resource("/get_detail").route(web::get().to(get_detail)))
             .default_service(web::route().to(|| HttpResponse::NotFound()))
     });
 

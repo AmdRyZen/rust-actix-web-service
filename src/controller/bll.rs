@@ -109,6 +109,41 @@ pub async fn update(pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Res
     })
 }
 
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct User {
+    id: i32,
+    name: String,
+    age: i32,
+    email: String,
+}
+pub async fn get_detail(_pool: web::Data<mysql::Pool>) -> impl Responder {
+    let sql: String = format!("SELECT id, name, age, email  FROM user WHERE id = {} AND age > {}", "1".to_string(), "10".to_string());
+    //println!("sql = {:?}", sql);
+    let mut conn = _pool.get_conn().unwrap();
+    let result = conn.query_map(
+        sql,
+        |(id, name, age, email)| User {
+            id,
+            name,
+            age,
+            email,
+        },
+    );
+
+    let detail = match result {
+        Ok(result) => result,
+        Err(_e) => vec![],
+    };
+
+    //println!("detail = {:?}", detail);
+    web::Json(response::Success {
+        code: response::HTTP_OK,
+        message: response::HTTP_MSG.to_string(),
+        result: detail,
+    })
+}
+
 pub async fn list(
     pool: web::Data<mysql::Pool>,
     _req: HttpRequest,
@@ -116,25 +151,10 @@ pub async fn list(
 ) -> impl Responder {
     //let id = _info.get("id").unwrap();
     let id = _req.match_info().get("id").unwrap_or("1");
-
-    let mut sql = String::from("");
-    let mut sql_where = String::from("");
-    let mut sql_count = String::from("");
-
-    sql_where.push_str(" where id >= ");
-    sql_where.push_str(&id.to_string());
-
-    sql.push_str(
-        "select id, status, name, pull_url, server_name, created_at, type from t_media_screenshot ",
-    );
-    sql.push_str(&sql_where);
-    sql.push_str(" order by id desc");
-
-    sql_count.push_str("select count(1) as total from t_media_screenshot ");
-    sql_count.push_str(&sql_where);
+    let sql: String = format!("SELECT id, name, age, email FROM user WHERE id > {} ORDER BY id DESC", id.to_string());
+    let sql_count: String = format!("SELECT count(1) as total FROM user WHERE id > {}", id.to_string());
 
     let mut conn = pool.get_conn().unwrap();
-
     let total: Result<Option<u64>> = conn.query_first(sql_count);
     let count: u64 = match total {
         Ok(total) => total.unwrap(),
@@ -143,14 +163,11 @@ pub async fn list(
 
     let result = conn.query_map(
         sql,
-        |(id, status, name, pull_url, server_name, created_at, _type)| List {
+        |(id, name, age, email)| User {
             id,
-            status,
             name,
-            pull_url,
-            server_name,
-            created_at,
-            _type,
+            age,
+           email
         },
     );
 
