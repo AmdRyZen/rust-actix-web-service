@@ -73,7 +73,7 @@ impl Match {
 
     pub async fn curl() -> (u32, Vec<User>) {
         let client = reqwest::Client::new();
-        let response = client.get("http://127.0.0.1:8000/lista")
+        let response = client.get("http://127.0.0.1:8000/list")
             .body("the exact body that is sent")
             .send()
             .await
