@@ -1,9 +1,8 @@
 use actix_web::{web, HttpRequest};
-use curl::easy::Easy;
 use mysql::prelude::*;
 use mysql::*;
 use serde::{Deserialize, Serialize};
-use std::io::{stdout, Write};
+extern crate serde_json;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Match {
@@ -14,6 +13,13 @@ pub struct Match {
     pub server_name: String,
     pub created_at: String,
     pub _type: i32,
+}
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct User {
+    pub id: i64,
+    pub name: String,
+    pub age: i64,
+    pub email: String,
 }
 
 impl Match {
@@ -65,19 +71,38 @@ impl Match {
         (count, list)
     }
 
-    pub async fn curl() -> (u32, ()) {
-        let mut handle = Easy::new();
-        handle.url("127.0.0.1:8000/match/list").unwrap();
-        handle
-            .write_function(|data| {
-                stdout().write_all(data).unwrap();
-                Ok(data.len())
-            })
+    pub async fn curl() -> (u32, Vec<User>) {
+        let client = reqwest::Client::new();
+        let response = client.get("http://127.0.0.1:8000/lista")
+            .body("the exact body that is sent")
+            .send()
+            .await
             .unwrap();
-        handle.perform().ok().unwrap();
-        let _code = handle.response_code().unwrap();
-        //let _err = handle.perform().err();
-        //println!("{:#?}", _code);
-        (_code, ())
+        //println!("client: {:?}", client);
+        //println!("response: {:?}", response);
+
+        let code = response.status().as_u16();
+        let mut list: Vec<User> = vec![];
+        if code == 200 {
+            let data = response.json::<serde_json::value::Value>().await.unwrap();
+            if data["code"] == 1 {
+                let data_array = data["result"]["list"].as_array().unwrap();
+                for val in data_array {  //开始迭代
+                    let _id = val.get(&"id").unwrap().as_i64().unwrap();
+                    let _val_name = val.get("name").unwrap().as_str().unwrap();
+                    let _age = val.get(&"age").unwrap().as_i64().unwrap();
+                    let _email = val.get("email").unwrap().as_str().unwrap();
+
+                    let p: User = User {
+                        id: _id,
+                        name: _val_name.to_string(),
+                        age: _age,
+                        email: _email.to_string()
+                    };
+                    list.push(p);
+                }
+            }
+        }
+        (0, list)
     }
 }

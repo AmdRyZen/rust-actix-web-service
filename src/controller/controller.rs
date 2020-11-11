@@ -46,15 +46,15 @@ pub async fn match_list(_pool: web::Data<mysql::Pool>, _req: HttpRequest) -> imp
 pub async fn curl(_pool: web::Data<mysql::Pool>, _req: HttpRequest) -> impl Responder {
     let (_code, _ret) = Match::curl().await;
 
-    let mut is_ok = false;
+    let mut _is_ok = false;
     if _code == 200 {
-        is_ok = true;
+        _is_ok = true;
     }
 
     web::Json(response::Success {
         code: response::HTTP_OK,
         message: response::HTTP_MSG.to_string(),
-        result: is_ok,
+        result: _ret,
     })
 }
 
