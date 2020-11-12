@@ -11,11 +11,11 @@ rust-actix-web-service
 
 ## 实现说明
 
-基于 actix-web actixactor框架和Tokio 异步IO系统之上构建的高级Web框架部分 以及对其他组件的集成， 包括但不限于(MySQL Redis elasticsearch CheckLoginMiddleware  jsonwebtoken等)
+基于 actix-web actixactor框架和Tokio 异步IO系统之上构建的高级Web框架部分 以及对其他组件的集成， 包括但不限于(MySQL Redis elasticsearch Middleware  jsonwebtoken等)
 
 ## 环境要求
 
-需要 Rust1.39+, actix_web2.0
+需要 Rust1.42+, actix_web3.0
 
 
 ## 框架定位
